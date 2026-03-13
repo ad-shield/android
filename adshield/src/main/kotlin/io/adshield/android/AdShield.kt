@@ -6,29 +6,47 @@ import android.util.Log
 object AdShield {
 
     private const val TAG = "AdShield"
-    @Volatile
-    private var measured = false
+
+    @JvmStatic
+    fun configure(endpoint: String) {
+        ConfigManager.configure(endpoint)
+        Log.d(TAG, "Configured with endpoint: $endpoint")
+    }
 
     @JvmStatic
     fun measure(context: Context) {
-        if (measured) return
-        measured = true
-
-        val packageName = context.packageName
+        val appContext = context.applicationContext
 
         Thread {
             try {
-                val result = AdBlockDetector.detect()
-                if (result == null) {
-                    Log.d(TAG, "Network offline, skipping")
+                val config = ConfigManager.fetchConfig()
+                if (config == null) {
+                    Log.e(TAG, "Failed to fetch config, aborting")
                     return@Thread
                 }
-                Log.d(TAG, "Adblock detected: $result")
+                Log.d(TAG, "Config fetched: ${config.adblockDetectionUrls.size} URLs to test")
+
+                if (!ConfigManager.shouldTransmit(appContext, config.transmissionIntervalMs)) {
+                    Log.d(TAG, "Skipping: transmissionIntervalMs not elapsed")
+                    return@Thread
+                }
+
+                val results = AdBlockDetector.detectAll(config.adblockDetectionUrls)
+                for (r in results) {
+                    Log.d(TAG, "  ${r.url} -> accessible=${r.accessible}")
+                }
+
                 EventLogger.log(
-                    packageName = packageName,
-                    platform = "android",
-                    isAdBlockDetected = result,
+                    endpoints = config.reportEndpoints,
+                    deviceId = DeviceInfo.getDeviceId(appContext),
+                    bundleId = DeviceInfo.getBundleId(appContext),
+                    osVersion = DeviceInfo.getOsVersion(),
+                    locale = DeviceInfo.getLocale(),
+                    results = results,
                 )
+
+                ConfigManager.recordTransmission(appContext)
+                Log.d(TAG, "Measure complete")
             } catch (e: Exception) {
                 Log.e(TAG, "measure failed", e)
             }

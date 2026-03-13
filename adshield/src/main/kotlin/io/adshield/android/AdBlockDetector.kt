@@ -5,18 +5,23 @@ import java.net.URL
 
 internal object AdBlockDetector {
 
-    private const val CONTROL_URL = "https://www.google.com"
-    private const val AD_URL = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
     private const val TIMEOUT_MS = 5000
+    private const val MAX_RETRIES = 3
 
-    /**
-     * Returns true if adblock detected, false if not, null if network offline.
-     */
-    fun detect(): Boolean? {
-        val controlOk = probe(CONTROL_URL)
-        if (!controlOk) return null
-        val adOk = probe(AD_URL)
-        return !adOk
+    data class Result(val url: String, val accessible: Boolean)
+
+    fun detectAll(urls: List<String>): List<Result> {
+        return urls.map { url ->
+            val accessible = probeWithRetry(url)
+            Result(url, accessible)
+        }
+    }
+
+    private fun probeWithRetry(urlString: String): Boolean {
+        repeat(MAX_RETRIES) {
+            if (probe(urlString)) return true
+        }
+        return false
     }
 
     private fun probe(urlString: String): Boolean {

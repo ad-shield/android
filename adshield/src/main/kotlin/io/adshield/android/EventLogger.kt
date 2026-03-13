@@ -1,31 +1,72 @@
 package io.adshield.android
 
+import android.util.Log
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.UUID
 
 internal object EventLogger {
 
-    private const val ENDPOINT = "https://css-load.com/bq/event"
+    private const val TAG = "AdShield"
+    private const val SDK_VERSION = "1.0.0"
+    private const val TIMEOUT_MS = 10000
 
-    fun log(packageName: String, platform: String, isAdBlockDetected: Boolean) {
-        try {
-            val eventId = UUID.randomUUID().toString()
-            val json = """{"table":"mobile_measure","data":[{"event_id":"$eventId","package":"$packageName","platform":"$platform","is_adblock_detected":$isAdBlockDetected}]}"""
+    fun log(
+        endpoints: List<String>,
+        deviceId: String,
+        bundleId: String,
+        osVersion: String,
+        locale: String,
+        results: List<AdBlockDetector.Result>,
+    ) {
+        val json = buildPayload(deviceId, bundleId, osVersion, locale, results)
+        Log.d(TAG, "Sending report: $json")
 
-            val conn = URL(ENDPOINT).openConnection() as HttpURLConnection
-            conn.requestMethod = "POST"
-            conn.setRequestProperty("Content-Type", "application/json")
-            conn.connectTimeout = 5000
-            conn.readTimeout = 5000
-            conn.doOutput = true
+        for (endpoint in endpoints) {
+            try {
+                val conn = URL(endpoint).openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.connectTimeout = TIMEOUT_MS
+                conn.readTimeout = TIMEOUT_MS
+                conn.doOutput = true
 
-            OutputStreamWriter(conn.outputStream).use { it.write(json) }
-            conn.responseCode
-            conn.disconnect()
-        } catch (_: Exception) {
-            // fire-and-forget
+                OutputStreamWriter(conn.outputStream).use { it.write(json) }
+                val code = conn.responseCode
+                conn.disconnect()
+                Log.d(TAG, "Report sent to $endpoint, status=$code")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to send report to $endpoint", e)
+            }
         }
+    }
+
+    private fun buildPayload(
+        deviceId: String,
+        bundleId: String,
+        osVersion: String,
+        locale: String,
+        results: List<AdBlockDetector.Result>,
+    ): String {
+        val obj = JSONObject()
+        obj.put("deviceId", deviceId)
+        obj.put("bundleId", bundleId)
+        obj.put("platform", "android")
+        obj.put("sdkVersion", SDK_VERSION)
+        obj.put("osVersion", osVersion)
+        obj.put("locale", locale)
+
+        val arr = JSONArray()
+        for (r in results) {
+            val item = JSONObject()
+            item.put("url", r.url)
+            item.put("accessible", r.accessible)
+            arr.put(item)
+        }
+        obj.put("results", arr)
+
+        return obj.toString()
     }
 }
