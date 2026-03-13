@@ -88,6 +88,6 @@ signing {
     val signingPassword = findProperty("signingPassword") as String? ?: System.getenv("SIGNING_PASSWORD")
     if (signingKey != null && signingPassword != null) {
         useInMemoryPgpKeys(signingKey, signingPassword)
+        sign(publishing.publications["release"])
     }
-    sign(publishing.publications["release"])
 }
