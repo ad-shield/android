@@ -1,10 +1,14 @@
 package io.adshield.android
 
 import android.content.Context
+import android.util.Base64
 import android.util.Log
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 internal object ConfigManager {
 
@@ -12,6 +16,9 @@ internal object ConfigManager {
     private const val PREFS_NAME = "adshield_prefs"
     private const val KEY_LAST_TRANSMISSION = "last_transmission_ms"
     private const val TIMEOUT_MS = 10000
+    private const val AES_KEY_HEX = "a6be11212141a6ba6cd7b9213fc4d84c98db63c2574824d452dcf56ee8cd6e42"
+    private const val GCM_IV_LENGTH = 12
+    private const val GCM_TAG_BITS = 128
 
     @Volatile
     var endpoint: String? = null
@@ -27,10 +34,12 @@ internal object ConfigManager {
             conn.requestMethod = "GET"
             conn.connectTimeout = TIMEOUT_MS
             conn.readTimeout = TIMEOUT_MS
-            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            val body = conn.inputStream.bufferedReader().use { it.readText().trim() }
             conn.disconnect()
 
-            val json = JSONObject(body)
+            val jsonStr = decrypt(body)
+            val json = JSONObject(jsonStr)
+
             val reportEndpoints = mutableListOf<String>()
             val endpoints = json.getJSONArray("reportEndpoints")
             for (i in 0 until endpoints.length()) {
@@ -50,6 +59,24 @@ internal object ConfigManager {
             Log.e(TAG, "Failed to fetch config", e)
             null
         }
+    }
+
+    private fun decrypt(base64Data: String): String {
+        val raw = Base64.decode(base64Data, Base64.DEFAULT)
+        val iv = raw.copyOfRange(0, GCM_IV_LENGTH)
+        val ciphertext = raw.copyOfRange(GCM_IV_LENGTH, raw.size)
+
+        val keyBytes = ByteArray(AES_KEY_HEX.length / 2) { i ->
+            AES_KEY_HEX.substring(i * 2, i * 2 + 2).toInt(16).toByte()
+        }
+        val key = SecretKeySpec(keyBytes, "AES")
+        val spec = GCMParameterSpec(GCM_TAG_BITS, iv)
+
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.DECRYPT_MODE, key, spec)
+        val decrypted = cipher.doFinal(ciphertext)
+
+        return String(decrypted, Charsets.UTF_8)
     }
 
     fun shouldTransmit(context: Context, intervalMs: Long): Boolean {
