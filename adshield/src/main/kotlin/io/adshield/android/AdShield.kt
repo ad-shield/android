@@ -34,6 +34,12 @@ object AdShield {
 
                 ConfigManager.saveIntervalMs(appContext, config.transmissionIntervalMs)
 
+                if (Math.random() >= config.sampleRatio) {
+                    Log.d(TAG, "Skipping: not sampled (sampleRatio=${config.sampleRatio})")
+                    ConfigManager.recordTransmission(appContext)
+                    return@Thread
+                }
+
                 val results = AdBlockDetector.detectAll(config.adblockDetectionUrls)
                 for (r in results) {
                     Log.d(TAG, "  ${r.url} -> accessible=${r.accessible}")

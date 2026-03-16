@@ -55,8 +55,9 @@ internal object ConfigManager {
             }
 
             val intervalMs = json.optLong("transmissionIntervalMs", 0L)
+            val sampleRatio = json.optDouble("sampleRatio", 1.0)
 
-            Config(reportEndpoints, urls, intervalMs)
+            Config(reportEndpoints, urls, intervalMs, sampleRatio)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch config", e)
             null
@@ -108,5 +109,6 @@ internal object ConfigManager {
         val reportEndpoints: List<String>,
         val adblockDetectionUrls: List<String>,
         val transmissionIntervalMs: Long,
+        val sampleRatio: Double,
     )
 }
