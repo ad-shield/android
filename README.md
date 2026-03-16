@@ -7,26 +7,29 @@ Ad-Shield mobile SDK for Android. Detects ad blocking and reports results.
 Add the dependency to your `build.gradle.kts`:
 
 ```gradle
-implementation("io.adshield:adshield-android:1.0.0")
+implementation("io.ad-shield:adshield-android:0.0.2")
 ```
 
-No additional repositories needed -- the SDK is published to Maven Central.
+No additional repositories needed — the SDK is published to Maven Central.
 
 ## Usage
 
 ```kotlin
-// Application.onCreate() -- just 1 line
+// In your Application.onCreate()
+AdShield.configure(endpoint = "https://your-endpoint.example.com/config")
 AdShield.measure(this)
 ```
 
-That's it. One line of code.
+- `configure()` — Sets the config endpoint URL. Contact Ad-Shield (dev@ad-shield.io) to obtain your endpoint.
+- `measure()` — Fetches config, detects ad blockers, and reports results. Runs in the background.
 
 ## How it works
 
-- Detects ad blockers by checking reachability of ad domains
-- Sends detection results to Ad-Shield analytics (fire-and-forget)
-- Runs in the background, never blocks the main thread
-- Runs once per app session (subsequent calls are no-ops)
+1. Checks if enough time has passed since the last transmission (`transmissionIntervalMs`)
+2. Fetches encrypted config from the configured endpoint
+3. Probes ad-related URLs to detect ad blocking (with retries)
+4. Sends structured results to the reporting endpoints defined in config
+5. All work runs on a background thread — never blocks the main thread
 
 ## Requirements
 
@@ -37,50 +40,15 @@ That's it. One line of code.
 
 ```kotlin
 object AdShield {
+    fun configure(endpoint: String)
     fun measure(context: Context)
 }
 ```
 
-| Parameter | Description |
-|-----------|-------------|
-| `context` | Application or Activity context. Used to read the package name. |
-
-## Data collected
-
-| Field | Value |
-|-------|-------|
-| `package` | App package name |
-| `platform` | `"android"` |
-| `is_adblock_detected` | `true` / `false` |
-
-Server-side enrichment adds: timestamp, IP, country, user agent, device type.
-
-## Publishing (internal)
-
-### Publish to mavenLocal (for testing)
-
-```bash
-cd mobile/android
-./gradlew :adshield:publishReleasePublicationToMavenLocal
-```
-
-### Publish to Maven Central
-
-Set credentials via environment variables or `~/.gradle/gradle.properties`:
-
-```properties
-ossrhUsername=your-sonatype-username
-ossrhPassword=your-sonatype-password
-signingKey=your-gpg-private-key
-signingPassword=your-gpg-passphrase
-```
-
-Then:
-
-```bash
-cd mobile/android
-./gradlew :adshield:publishReleasePublicationToSonatypeRepository
-```
+| Method | Description |
+|--------|-------------|
+| `configure(endpoint)` | Sets the config endpoint. Must be called before `measure()`. |
+| `measure(context)` | Runs detection and reporting. Pass Application or Activity context. |
 
 ## License
 
