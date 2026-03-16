@@ -50,6 +50,18 @@ object AdShield {
 | `configure(endpoint)` | Sets the config endpoint. Must be called before `measure()`. |
 | `measure(context)` | Runs detection and reporting. Pass Application or Activity context. |
 
+## Data Collection
+
+This SDK collects limited data for the purpose of ad block detection:
+
+- App package name
+- OS version
+- Device locale
+- Ad block detection results (URL reachability)
+- Randomly generated device identifier (UUID, not linked to any personal identity)
+
+**No personally identifiable information (PII) is collected.** The SDK does not access contacts, location, advertising IDs, hardware identifiers, or any other data that could identify an individual.
+
 ## License
 
 Proprietary. Copyright Ad-Shield Inc.
