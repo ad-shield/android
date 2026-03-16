@@ -15,6 +15,8 @@ internal object ConfigManager {
     private const val TAG = "AdShield"
     private const val PREFS_NAME = "adshield_prefs"
     private const val KEY_LAST_TRANSMISSION = "last_transmission_ms"
+    private const val KEY_INTERVAL_MS = "transmission_interval_ms"
+    private const val DEFAULT_INTERVAL_MS = 3_600_000L // 1 hour
     private const val TIMEOUT_MS = 10000
     private const val AES_KEY_HEX = "a6be11212141a6ba6cd7b9213fc4d84c98db63c2574824d452dcf56ee8cd6e42"
     private const val GCM_IV_LENGTH = 12
@@ -77,6 +79,16 @@ internal object ConfigManager {
         val decrypted = cipher.doFinal(ciphertext)
 
         return String(decrypted, Charsets.UTF_8)
+    }
+
+    fun getLastIntervalMs(context: Context): Long {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getLong(KEY_INTERVAL_MS, DEFAULT_INTERVAL_MS)
+    }
+
+    fun saveIntervalMs(context: Context, intervalMs: Long) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putLong(KEY_INTERVAL_MS, intervalMs).apply()
     }
 
     fun shouldTransmit(context: Context, intervalMs: Long): Boolean {

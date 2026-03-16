@@ -19,6 +19,12 @@ object AdShield {
 
         Thread {
             try {
+                val intervalMs = ConfigManager.getLastIntervalMs(appContext)
+                if (!ConfigManager.shouldTransmit(appContext, intervalMs)) {
+                    Log.d(TAG, "Skipping: transmissionIntervalMs not elapsed")
+                    return@Thread
+                }
+
                 val config = ConfigManager.fetchConfig()
                 if (config == null) {
                     Log.e(TAG, "Failed to fetch config, aborting")
@@ -26,10 +32,7 @@ object AdShield {
                 }
                 Log.d(TAG, "Config fetched: ${config.adblockDetectionUrls.size} URLs to test")
 
-                if (!ConfigManager.shouldTransmit(appContext, config.transmissionIntervalMs)) {
-                    Log.d(TAG, "Skipping: transmissionIntervalMs not elapsed")
-                    return@Thread
-                }
+                ConfigManager.saveIntervalMs(appContext, config.transmissionIntervalMs)
 
                 val results = AdBlockDetector.detectAll(config.adblockDetectionUrls)
                 for (r in results) {
