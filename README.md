@@ -12,15 +12,15 @@ implementation("io.ad-shield:adshield-android:0.0.5")
 
 ```kotlin
 // In your Application.onCreate()
-AdShield.configure(endpoint = "https://your-endpoint.example.com/config")
+AdShield.configure(endpoint = "<ENDPOINT>") // Contact Ad-Shield to obtain your endpoint
 AdShield.measure(this)
 ```
 
-Contact Ad-Shield (dev@ad-shield.io) to obtain your endpoint.
+Contact Ad-Shield to obtain your endpoint URL.
 
 ## License
 
-Copyright (c) 2024-present Ad-Shield Inc. All rights reserved.
+Copyright (c) 2026-present Ad-Shield Inc. All rights reserved.
 
 This software is proprietary and confidential. No part of this software may be reproduced, distributed, modified, reverse-engineered, or used in any form without prior written permission from Ad-Shield Inc.
 
