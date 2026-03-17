@@ -12,7 +12,7 @@ implementation("io.ad-shield:adshield-android:0.0.5")
 
 ```kotlin
 // In your Application.onCreate()
-AdShield.configure(endpoint = "https://...") // Contact Ad-Shield to obtain your endpoint
+AdShield.configure(endpoint = "https://example.ad-shield.io/config") // Contact Ad-Shield to obtain your endpoint
 AdShield.measure(this)
 ```
 
