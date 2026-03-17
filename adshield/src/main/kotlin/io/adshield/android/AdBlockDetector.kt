@@ -15,7 +15,7 @@ internal object AdBlockDetector {
     data class Result(val url: String, val accessible: Boolean)
 
     fun detectAll(urls: List<String>): List<Result> {
-        val executor = Executors.newFixedThreadPool(urls.size.coerceAtMost(10))
+        val executor = Executors.newFixedThreadPool(urls.size.coerceAtMost(4))
         return try {
             val futures = urls.map { url ->
                 executor.submit(Callable { Result(url, probeWithRetry(url)) })
