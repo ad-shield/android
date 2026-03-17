@@ -28,6 +28,11 @@ object AdShield {
                     return@Thread
                 }
 
+                if (config.adblockDetectionUrls.isEmpty()) {
+                    ConfigManager.scheduleNext(appContext, config.transmissionIntervalMs)
+                    return@Thread
+                }
+
                 val results = AdBlockDetector.detectAll(config.adblockDetectionUrls)
 
                 EventLogger.log(
