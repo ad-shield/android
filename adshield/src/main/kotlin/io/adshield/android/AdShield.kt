@@ -43,7 +43,7 @@ object AdShield {
                 )
 
                 ConfigManager.scheduleNext(appContext, config.transmissionIntervalMs)
-            } catch (_: Exception) {
+            } catch (_: Throwable) {
             }
         }.start()
     }
