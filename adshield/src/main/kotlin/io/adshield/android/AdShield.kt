@@ -17,8 +17,9 @@ object AdShield {
             try {
                 val intervalMs = ConfigManager.getLastIntervalMs(appContext)
                 if (!ConfigManager.shouldTransmit(appContext, intervalMs)) return@Thread
+                if (ConfigManager.isInFetchBackoff(appContext)) return@Thread
 
-                val config = ConfigManager.fetchConfig() ?: return@Thread
+                val config = ConfigManager.fetchConfig(appContext) ?: return@Thread
 
                 ConfigManager.saveIntervalMs(appContext, config.transmissionIntervalMs)
 

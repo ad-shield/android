@@ -14,7 +14,9 @@ internal object ConfigManager {
     private const val PREFS_NAME = "adshield_prefs"
     private const val KEY_LAST_TRANSMISSION = "last_transmission_ms"
     private const val KEY_INTERVAL_MS = "transmission_interval_ms"
+    private const val KEY_LAST_FETCH_FAILURE = "last_fetch_failure_ms"
     private const val DEFAULT_INTERVAL_MS = 3_600_000L // 1 hour
+    private const val FETCH_FAILURE_BACKOFF_MS = 86_400_000L // 24 hours
     private const val TIMEOUT_MS = 10000
     private const val AES_KEY_HEX = "a6be11212141a6ba6cd7b9213fc4d84c98db63c2574824d452dcf56ee8cd6e42"
     private const val GCM_IV_LENGTH = 12
@@ -27,7 +29,23 @@ internal object ConfigManager {
         this.endpoint = endpoint
     }
 
-    fun fetchConfig(): Config? {
+    fun isInFetchBackoff(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val lastFailure = prefs.getLong(KEY_LAST_FETCH_FAILURE, 0L)
+        return (System.currentTimeMillis() - lastFailure) < FETCH_FAILURE_BACKOFF_MS
+    }
+
+    private fun recordFetchFailure(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putLong(KEY_LAST_FETCH_FAILURE, System.currentTimeMillis()).apply()
+    }
+
+    private fun clearFetchFailure(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().remove(KEY_LAST_FETCH_FAILURE).apply()
+    }
+
+    fun fetchConfig(context: Context): Config? {
         val url = endpoint ?: return null
         var conn: HttpURLConnection? = null
         return try {
@@ -55,8 +73,10 @@ internal object ConfigManager {
             val intervalMs = json.optLong("transmissionIntervalMs", 0L)
             val sampleRatio = json.optDouble("sampleRatio", 1.0)
 
+            clearFetchFailure(context)
             Config(reportEndpoints, urls, intervalMs, sampleRatio)
         } catch (_: Exception) {
+            recordFetchFailure(context)
             null
         } finally {
             conn?.disconnect()
