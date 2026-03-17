@@ -10,6 +10,8 @@ android {
 
     defaultConfig {
         minSdk = 21
+        val sdkVersion = findProperty("version") as String? ?: "0.0.0-dev"
+        resValue("string", "adshield_sdk_version", sdkVersion)
     }
 
     compileOptions {

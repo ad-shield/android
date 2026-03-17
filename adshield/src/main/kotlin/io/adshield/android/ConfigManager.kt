@@ -2,7 +2,6 @@ package io.adshield.android
 
 import android.content.Context
 import android.util.Base64
-import android.util.Log
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -12,7 +11,6 @@ import javax.crypto.spec.SecretKeySpec
 
 internal object ConfigManager {
 
-    private const val TAG = "AdShield"
     private const val PREFS_NAME = "adshield_prefs"
     private const val KEY_LAST_TRANSMISSION = "last_transmission_ms"
     private const val KEY_INTERVAL_MS = "transmission_interval_ms"
@@ -31,13 +29,13 @@ internal object ConfigManager {
 
     fun fetchConfig(): Config? {
         val url = endpoint ?: return null
+        var conn: HttpURLConnection? = null
         return try {
-            val conn = URL(url).openConnection() as HttpURLConnection
+            conn = URL(url).openConnection() as HttpURLConnection
             conn.requestMethod = "GET"
             conn.connectTimeout = TIMEOUT_MS
             conn.readTimeout = TIMEOUT_MS
             val body = conn.inputStream.bufferedReader().use { it.readText().trim() }
-            conn.disconnect()
 
             val jsonStr = decrypt(body)
             val json = JSONObject(jsonStr)
@@ -58,9 +56,10 @@ internal object ConfigManager {
             val sampleRatio = json.optDouble("sampleRatio", 1.0)
 
             Config(reportEndpoints, urls, intervalMs, sampleRatio)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch config", e)
+        } catch (_: Exception) {
             null
+        } finally {
+            conn?.disconnect()
         }
     }
 
