@@ -65,7 +65,7 @@ internal object EventLogger {
         obj.put("sdkVersion", sdkVersion)
         obj.put("osVersion", osVersion)
         obj.put("locale", locale)
-        obj.put("event_sample_rate", sampleRatio)
+        obj.put("sampleRatio", sampleRatio)
         obj.put("transmissionIntervalMs", transmissionIntervalMs)
 
         val arr = JSONArray()
