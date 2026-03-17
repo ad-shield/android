@@ -15,16 +15,16 @@ object AdShield {
 
         Thread {
             try {
-                val intervalMs = ConfigManager.getLastIntervalMs(appContext)
-                if (!ConfigManager.shouldTransmit(appContext, intervalMs)) return@Thread
-                if (ConfigManager.isInFetchBackoff(appContext)) return@Thread
+                if (!ConfigManager.isAllowed(appContext)) return@Thread
 
-                val config = ConfigManager.fetchConfig(appContext) ?: return@Thread
-
-                ConfigManager.saveIntervalMs(appContext, config.transmissionIntervalMs)
+                val config = ConfigManager.fetchConfig()
+                if (config == null) {
+                    ConfigManager.scheduleNext(appContext, ConfigManager.FAILURE_BACKOFF_MS)
+                    return@Thread
+                }
 
                 if (Math.random() >= config.sampleRatio) {
-                    ConfigManager.recordTransmission(appContext)
+                    ConfigManager.scheduleNext(appContext, config.transmissionIntervalMs)
                     return@Thread
                 }
 
@@ -42,7 +42,7 @@ object AdShield {
                     transmissionIntervalMs = config.transmissionIntervalMs,
                 )
 
-                ConfigManager.recordTransmission(appContext)
+                ConfigManager.scheduleNext(appContext, config.transmissionIntervalMs)
             } catch (_: Exception) {
             }
         }.start()

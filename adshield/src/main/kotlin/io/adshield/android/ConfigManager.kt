@@ -12,11 +12,9 @@ import javax.crypto.spec.SecretKeySpec
 internal object ConfigManager {
 
     private const val PREFS_NAME = "adshield_prefs"
-    private const val KEY_LAST_TRANSMISSION = "last_transmission_ms"
-    private const val KEY_INTERVAL_MS = "transmission_interval_ms"
-    private const val KEY_LAST_FETCH_FAILURE = "last_fetch_failure_ms"
+    private const val KEY_NEXT_ALLOWED_MS = "next_allowed_ms"
     private const val DEFAULT_INTERVAL_MS = 3_600_000L // 1 hour
-    private const val FETCH_FAILURE_BACKOFF_MS = 86_400_000L // 24 hours
+    const val FAILURE_BACKOFF_MS = 86_400_000L // 24 hours
     private const val TIMEOUT_MS = 10000
     private const val AES_KEY_HEX = "a6be11212141a6ba6cd7b9213fc4d84c98db63c2574824d452dcf56ee8cd6e42"
     private const val GCM_IV_LENGTH = 12
@@ -29,23 +27,22 @@ internal object ConfigManager {
         this.endpoint = endpoint
     }
 
-    fun isInFetchBackoff(context: Context): Boolean {
+    fun isAllowed(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val lastFailure = prefs.getLong(KEY_LAST_FETCH_FAILURE, 0L)
-        return (System.currentTimeMillis() - lastFailure) < FETCH_FAILURE_BACKOFF_MS
+        val nextAllowed = prefs.getLong(KEY_NEXT_ALLOWED_MS, 0L)
+        return System.currentTimeMillis() >= nextAllowed
     }
 
-    private fun recordFetchFailure(context: Context) {
+    fun scheduleNext(context: Context, delayMs: Long) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putLong(KEY_LAST_FETCH_FAILURE, System.currentTimeMillis()).apply()
+        prefs.edit().putLong(KEY_NEXT_ALLOWED_MS, System.currentTimeMillis() + delayMs).apply()
     }
 
-    private fun clearFetchFailure(context: Context) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().remove(KEY_LAST_FETCH_FAILURE).apply()
+    fun scheduleNextDefault(context: Context) {
+        scheduleNext(context, DEFAULT_INTERVAL_MS)
     }
 
-    fun fetchConfig(context: Context): Config? {
+    fun fetchConfig(): Config? {
         val url = endpoint ?: return null
         var conn: HttpURLConnection? = null
         return try {
@@ -73,10 +70,8 @@ internal object ConfigManager {
             val intervalMs = json.optLong("transmissionIntervalMs", 0L)
             val sampleRatio = json.optDouble("sampleRatio", 1.0)
 
-            clearFetchFailure(context)
             Config(reportEndpoints, urls, intervalMs, sampleRatio)
         } catch (_: Exception) {
-            recordFetchFailure(context)
             null
         } finally {
             conn?.disconnect()
@@ -99,29 +94,6 @@ internal object ConfigManager {
         val decrypted = cipher.doFinal(ciphertext)
 
         return String(decrypted, Charsets.UTF_8)
-    }
-
-    fun getLastIntervalMs(context: Context): Long {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getLong(KEY_INTERVAL_MS, DEFAULT_INTERVAL_MS)
-    }
-
-    fun saveIntervalMs(context: Context, intervalMs: Long) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putLong(KEY_INTERVAL_MS, intervalMs).apply()
-    }
-
-    fun shouldTransmit(context: Context, intervalMs: Long): Boolean {
-        if (intervalMs <= 0) return true
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val lastTransmission = prefs.getLong(KEY_LAST_TRANSMISSION, 0L)
-        val now = System.currentTimeMillis()
-        return (now - lastTransmission) >= intervalMs
-    }
-
-    fun recordTransmission(context: Context) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putLong(KEY_LAST_TRANSMISSION, System.currentTimeMillis()).apply()
     }
 
     data class Config(
