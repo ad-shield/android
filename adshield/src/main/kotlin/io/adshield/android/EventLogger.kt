@@ -20,8 +20,10 @@ internal object EventLogger {
         osVersion: String,
         locale: String,
         results: List<AdBlockDetector.Result>,
+        sampleRatio: Double,
+        transmissionIntervalMs: Long,
     ) {
-        val json = buildPayload(deviceId, bundleId, osVersion, locale, results)
+        val json = buildPayload(deviceId, bundleId, osVersion, locale, results, sampleRatio, transmissionIntervalMs)
         Log.d(TAG, "Sending report: $json")
 
         for (endpoint in endpoints) {
@@ -49,6 +51,8 @@ internal object EventLogger {
         osVersion: String,
         locale: String,
         results: List<AdBlockDetector.Result>,
+        sampleRatio: Double,
+        transmissionIntervalMs: Long,
     ): String {
         val obj = JSONObject()
         obj.put("deviceId", deviceId)
@@ -57,6 +61,8 @@ internal object EventLogger {
         obj.put("sdkVersion", SDK_VERSION)
         obj.put("osVersion", osVersion)
         obj.put("locale", locale)
+        obj.put("event_sample_rate", sampleRatio)
+        obj.put("transmissionIntervalMs", transmissionIntervalMs)
 
         val arr = JSONArray()
         for (r in results) {

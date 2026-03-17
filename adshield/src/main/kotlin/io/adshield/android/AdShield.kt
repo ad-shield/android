@@ -52,6 +52,8 @@ object AdShield {
                     osVersion = DeviceInfo.getOsVersion(),
                     locale = DeviceInfo.getLocale(),
                     results = results,
+                    sampleRatio = config.sampleRatio,
+                    transmissionIntervalMs = config.transmissionIntervalMs,
                 )
 
                 ConfigManager.recordTransmission(appContext)
