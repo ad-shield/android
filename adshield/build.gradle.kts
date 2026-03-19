@@ -40,7 +40,7 @@ mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
     signAllPublications()
 
-    coordinates("io.ad-shield", "adshield-android", findProperty("version") as String? ?: "0.0.12")
+    coordinates("io.ad-shield", "adshield-android", findProperty("version") as String? ?: "0.0.0-dev")
 
     pom {
         name.set("AdShield Android SDK")
