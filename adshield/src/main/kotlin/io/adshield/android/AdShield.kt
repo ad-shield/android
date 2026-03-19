@@ -2,12 +2,16 @@ package io.adshield.android
 
 import android.content.Context
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 
 object AdShield {
 
     private const val TAG = "AdShield"
     @Volatile
     private var measured = false
+
+    @VisibleForTesting
+    internal fun reset() { measured = false }
 
     @JvmStatic
     fun measure(context: Context) {

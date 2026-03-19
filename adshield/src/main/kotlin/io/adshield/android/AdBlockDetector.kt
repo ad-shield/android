@@ -1,5 +1,6 @@
 package io.adshield.android
 
+import androidx.annotation.VisibleForTesting
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -9,13 +10,18 @@ internal object AdBlockDetector {
     private const val AD_URL = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
     private const val TIMEOUT_MS = 5000
 
+    @VisibleForTesting
+    internal var controlUrl = CONTROL_URL
+    @VisibleForTesting
+    internal var adUrl = AD_URL
+
     /**
      * Returns true if adblock detected, false if not, null if network offline.
      */
     fun detect(): Boolean? {
-        val controlOk = probe(CONTROL_URL)
+        val controlOk = probe(controlUrl)
         if (!controlOk) return null
-        val adOk = probe(AD_URL)
+        val adOk = probe(adUrl)
         return !adOk
     }
 

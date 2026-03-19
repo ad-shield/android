@@ -1,6 +1,7 @@
 package io.adshield.android
 
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
@@ -11,12 +12,15 @@ internal object EventLogger {
     private const val TAG = "AdShield"
     private const val ENDPOINT = "https://css-load.com/bq/event"
 
+    @VisibleForTesting
+    internal var endpoint = ENDPOINT
+
     fun log(packageName: String, platform: String, isAdBlockDetected: Boolean) {
         try {
             val eventId = UUID.randomUUID().toString()
             val json = """{"table":"mobile_measure","data":[{"event_id":"$eventId","package":"$packageName","platform":"$platform","is_adblock_detected":$isAdBlockDetected}]}"""
 
-            val conn = URL(ENDPOINT).openConnection() as HttpURLConnection
+            val conn = URL(endpoint).openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json")
             conn.connectTimeout = 5000
