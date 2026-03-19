@@ -1,6 +1,7 @@
 package io.adshield.android
 
 import android.content.Context
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.OutputStreamWriter
@@ -9,6 +10,7 @@ import java.net.URL
 
 internal object EventLogger {
 
+    private const val TAG = "AdShield"
     private const val TIMEOUT_MS = 10000
 
     fun log(
@@ -40,8 +42,14 @@ internal object EventLogger {
                 conn.doOutput = true
 
                 OutputStreamWriter(conn.outputStream).use { it.write(json) }
-                conn.responseCode
-            } catch (_: Exception) {
+                val responseCode = conn.responseCode
+                if (responseCode in 200..299) {
+                    Log.d(TAG, "Event sent to $endpoint (HTTP $responseCode)")
+                } else {
+                    Log.w(TAG, "Event send to $endpoint returned HTTP $responseCode")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Event send to $endpoint failed: ${e.message}")
             } finally {
                 conn?.disconnect()
             }

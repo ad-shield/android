@@ -18,10 +18,6 @@ AdShield.measure(this)
 
 Contact Ad-Shield to obtain your endpoint URL.
 
-## Sample App
-
-See [android-sample](https://github.com/ad-shield/android-sample) for a working example.
-
 ## License
 
 Copyright (c) 2026-present Ad-Shield Inc. All rights reserved.
