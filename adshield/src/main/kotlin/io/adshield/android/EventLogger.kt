@@ -1,5 +1,6 @@
 package io.adshield.android
 
+import android.util.Log
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
@@ -7,6 +8,7 @@ import java.util.UUID
 
 internal object EventLogger {
 
+    private const val TAG = "AdShield"
     private const val ENDPOINT = "https://css-load.com/bq/event"
 
     fun log(packageName: String, platform: String, isAdBlockDetected: Boolean) {
@@ -22,10 +24,16 @@ internal object EventLogger {
             conn.doOutput = true
 
             OutputStreamWriter(conn.outputStream).use { it.write(json) }
-            conn.responseCode
+            val responseCode = conn.responseCode
             conn.disconnect()
-        } catch (_: Exception) {
-            // fire-and-forget
+
+            if (responseCode in 200..299) {
+                Log.d(TAG, "Event sent successfully (HTTP $responseCode): adblock_detected=$isAdBlockDetected, event_id=$eventId")
+            } else {
+                Log.w(TAG, "Event send returned unexpected status (HTTP $responseCode): event_id=$eventId")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Event send failed: ${e.message}")
         }
     }
 }

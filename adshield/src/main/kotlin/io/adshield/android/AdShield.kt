@@ -11,7 +11,10 @@ object AdShield {
 
     @JvmStatic
     fun measure(context: Context) {
-        if (measured) return
+        if (measured) {
+            Log.d(TAG, "Skipping: already measured this session")
+            return
+        }
         measured = true
 
         val packageName = context.packageName
@@ -20,10 +23,10 @@ object AdShield {
             try {
                 val result = AdBlockDetector.detect()
                 if (result == null) {
-                    Log.d(TAG, "Network offline, skipping")
+                    Log.d(TAG, "Skipping transmission: network offline (control probe failed)")
                     return@Thread
                 }
-                Log.d(TAG, "Adblock detected: $result")
+                Log.d(TAG, "Detection result: adblock_detected=$result")
                 EventLogger.log(
                     packageName = packageName,
                     platform = "android",
