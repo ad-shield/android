@@ -8,6 +8,7 @@ object AdShield {
     private const val TAG = "AdShield"
 
     @JvmStatic
+    @JvmOverloads
     fun configure(endpoint: String, kv: Map<String, String> = emptyMap()) {
         ConfigManager.configure(endpoint, kv)
     }
