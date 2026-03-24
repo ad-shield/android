@@ -35,7 +35,8 @@ AdShield.configure(
 AdShield.measure(this)
 ```
 
-### Java Usage
+<details>
+<summary>Java Usage</summary>
 
 ```java
 // In your Application.onCreate()
@@ -43,7 +44,7 @@ AdShield.configure("https://example.ad-shield.io/config"); // Contact Ad-Shield 
 AdShield.measure(this);
 ```
 
-#### Example with KV (Java)
+With KV:
 
 ```java
 Map<String, String> kv = new HashMap<>();
@@ -53,6 +54,8 @@ kv.put("segment", "premium");
 AdShield.configure("https://example.ad-shield.io/config", kv);
 AdShield.measure(this);
 ```
+
+</details>
 
 ## License
 
