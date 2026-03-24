@@ -23,8 +23,12 @@ internal object ConfigManager {
     @Volatile
     var endpoint: String? = null
 
-    fun configure(endpoint: String) {
+    @Volatile
+    var kv: Map<String, String> = emptyMap()
+
+    fun configure(endpoint: String, kv: Map<String, String> = emptyMap()) {
         this.endpoint = endpoint
+        this.kv = kv
     }
 
     fun isAllowed(context: Context): Boolean {

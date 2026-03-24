@@ -31,6 +31,7 @@ class AdShieldE2ETest {
         reportServer = MockWebServer().also { it.start() }
 
         ConfigManager.endpoint = configServer.url("/config").toString()
+        ConfigManager.kv = emptyMap()
 
         val context = RuntimeEnvironment.getApplication()
         context.getSharedPreferences("adshield_prefs", Context.MODE_PRIVATE).edit().clear().apply()
@@ -42,6 +43,7 @@ class AdShieldE2ETest {
         probeServer.shutdown()
         reportServer.shutdown()
         ConfigManager.endpoint = null
+        ConfigManager.kv = emptyMap()
     }
 
     private fun encryptConfig(config: JSONObject): String {
@@ -202,5 +204,26 @@ class AdShieldE2ETest {
         assertNotNull(body.getString("bundleId"))
         assertNotNull(body.getJSONArray("results"))
         assertTrue(body.getJSONArray("results").length() > 0)
+    }
+
+    @Test
+    fun `event payload contains kv when configured`() {
+        configServer.enqueue(MockResponse().setBody(makeEncryptedConfig()))
+        probeServer.enqueue(MockResponse().setResponseCode(200))
+        reportServer.enqueue(MockResponse().setResponseCode(200))
+
+        AdShield.configure(
+            endpoint = configServer.url("/config").toString(),
+            kv = mapOf("user_type" to "new", "segment" to "premium")
+        )
+        AdShield.measure(RuntimeEnvironment.getApplication())
+        Thread.sleep(3000)
+
+        val req = reportServer.takeRequest(1, TimeUnit.SECONDS)
+        assertNotNull(req)
+        val body = JSONObject(req!!.body.readUtf8())
+        val kv = body.getJSONObject("kv")
+        assertEquals("new", kv.getString("user_type"))
+        assertEquals("premium", kv.getString("segment"))
     }
 }

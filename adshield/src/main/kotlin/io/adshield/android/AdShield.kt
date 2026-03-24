@@ -8,8 +8,8 @@ object AdShield {
     private const val TAG = "AdShield"
 
     @JvmStatic
-    fun configure(endpoint: String) {
-        ConfigManager.configure(endpoint)
+    fun configure(endpoint: String, kv: Map<String, String> = emptyMap()) {
+        ConfigManager.configure(endpoint, kv)
     }
 
     @JvmStatic
@@ -57,6 +57,7 @@ object AdShield {
                     results = results,
                     sampleRatio = config.sampleRatio,
                     transmissionIntervalMs = config.transmissionIntervalMs,
+                    kv = ConfigManager.kv,
                 )
                 Log.d(TAG, "Event sent successfully to ${config.reportEndpoints.size} endpoint(s)")
 

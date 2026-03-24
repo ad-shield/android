@@ -23,13 +23,14 @@ internal object EventLogger {
         results: List<AdBlockDetector.Result>,
         sampleRatio: Double,
         transmissionIntervalMs: Long,
+        kv: Map<String, String> = emptyMap(),
     ) {
         val sdkVersion = try {
             context.getString(R.string.adshield_sdk_version)
         } catch (_: Exception) {
             "unknown"
         }
-        val json = buildPayload(deviceId, bundleId, osVersion, locale, results, sampleRatio, transmissionIntervalMs, sdkVersion)
+        val json = buildPayload(deviceId, bundleId, osVersion, locale, results, sampleRatio, transmissionIntervalMs, sdkVersion, kv)
 
         for (endpoint in endpoints) {
             var conn: HttpURLConnection? = null
@@ -65,6 +66,7 @@ internal object EventLogger {
         sampleRatio: Double,
         transmissionIntervalMs: Long,
         sdkVersion: String,
+        kv: Map<String, String> = emptyMap(),
     ): String {
         val obj = JSONObject()
         obj.put("deviceId", deviceId)
@@ -75,6 +77,7 @@ internal object EventLogger {
         obj.put("locale", locale)
         obj.put("sampleRatio", sampleRatio)
         obj.put("transmissionIntervalMs", transmissionIntervalMs)
+        obj.put("kv", JSONObject(kv))
 
         val arr = JSONArray()
         for (r in results) {
