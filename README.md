@@ -5,7 +5,7 @@
 Add the dependency to your `build.gradle.kts`:
 
 ```gradle
-implementation("io.ad-shield:adshield-android:0.0.12")
+implementation("io.ad-shield:adshield-android:0.0.15")
 ```
 
 ## Usage
