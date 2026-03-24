@@ -25,7 +25,7 @@ Contact Ad-Shield to obtain your endpoint URL.
 | `endpoint` | `String` | Yes | Configuration endpoint URL provided by Ad-Shield. |
 | `kv` | `Map<String, String>` | No | Custom key-value pairs for segmenting report data. Used to break down metrics by custom dimensions (e.g., user type, app section). Defaults to empty. |
 
-#### Example with KV
+#### Example with KV (Kotlin)
 
 ```kotlin
 AdShield.configure(
@@ -33,6 +33,25 @@ AdShield.configure(
     kv = mapOf("user_type" to "new", "segment" to "premium")
 )
 AdShield.measure(this)
+```
+
+### Java Usage
+
+```java
+// In your Application.onCreate()
+AdShield.configure("https://example.ad-shield.io/config"); // Contact Ad-Shield to obtain your endpoint
+AdShield.measure(this);
+```
+
+#### Example with KV (Java)
+
+```java
+Map<String, String> kv = new HashMap<>();
+kv.put("user_type", "new");
+kv.put("segment", "premium");
+
+AdShield.configure("https://example.ad-shield.io/config", kv);
+AdShield.measure(this);
 ```
 
 ## License
