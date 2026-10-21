@@ -2,15 +2,14 @@ package io.adshield.android
 
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-import okhttp3.OkHttpClient
 import okhttp3.Request
 
 /** Dedicated original transport: no recovery interceptor, URLConnection or custom DNS/TLS policy. */
-internal object DetectionHttpClient {
+internal object OkHttpClient {
     data class Result(val code: Int, val body: String = "")
     private class NonRetryableStatus(val status: Int) : IOException()
 
-    private fun client(timeoutSeconds: Long) = OkHttpClient.Builder()
+    private fun client(timeoutSeconds: Long) = okhttp3.OkHttpClient.Builder()
         .connectTimeout(timeoutSeconds, TimeUnit.SECONDS)
         .readTimeout(timeoutSeconds, TimeUnit.SECONDS)
         .writeTimeout(timeoutSeconds, TimeUnit.SECONDS)

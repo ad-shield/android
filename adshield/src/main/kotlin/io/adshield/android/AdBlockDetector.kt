@@ -37,7 +37,7 @@ internal object AdBlockDetector {
     private fun probe(urlString: String): Boolean {
         return try {
             val request = Request.Builder().url(urlString).head().build()
-            DetectionHttpClient.execute(request).code in 200..399
+            OkHttpClient.execute(request).code in 200..399
         } catch (_: Exception) {
             false
         }

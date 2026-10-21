@@ -48,7 +48,7 @@ internal object ConfigManager {
         val url = endpoint ?: return null
         return try {
             val request = Request.Builder().url(url).get().build()
-            val response = DetectionHttpClient.execute(request, readBody = true)
+            val response = OkHttpClient.execute(request, readBody = true)
             if (response.code >= 400) return null
             val body = response.body.trim()
             val jsonStr = decrypt(body)

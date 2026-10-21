@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
-class DetectionHttpClientTest {
+class OkHttpClientTest {
     private val servers = mutableListOf<MockWebServer>()
     private val context get() = RuntimeEnvironment.getApplication()
 
@@ -175,7 +175,7 @@ class DetectionHttpClientTest {
         val target = server()
         repeat(22) { target.enqueue(MockResponse().setResponseCode(302).setHeader("Location", "/loop")) }
         try {
-            DetectionHttpClient.execute(Request.Builder().url(target.url("/loop")).head().build())
+            OkHttpClient.execute(Request.Builder().url(target.url("/loop")).head().build())
             fail("Expected redirect limit")
         } catch (expected: IOException) {
             assertEquals("Too many redirects", expected.message)
