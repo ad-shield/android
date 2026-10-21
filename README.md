@@ -46,10 +46,6 @@ AdShield.configure("https://example.ad-shield.io/config", kv);
 AdShield.measure(this);
 ```
 
-## HTTP transport
-
-Config GET, detection HEAD, and report POST use a dedicated OkHttp client. OkHttp 3.12.13 is a runtime dependency; applications may resolve a newer compatible version through Gradle. These requests do not use the global `URLStreamHandlerFactory`. The default User-Agent changes from the platform HTTP client to OkHttp (for example, `okhttp/3.12.13`).
-
 ## License
 
 Copyright (c) 2026-present Ad-Shield Inc. All rights reserved.
