@@ -10,6 +10,8 @@ import okhttp3.RequestBody
 
 internal object EventLogger {
 
+    private val httpClient = OkHttpClient(timeoutSeconds = 10)
+
     private const val TAG = "AdShield"
 
     fun log(
@@ -35,7 +37,7 @@ internal object EventLogger {
             try {
                 val body = RequestBody.create(MediaType.parse("application/json"), json.toByteArray(Charsets.UTF_8))
                 val request = Request.Builder().url(endpoint).post(body).build()
-                val responseCode = OkHttpClient.execute(request).code
+                val responseCode = httpClient.execute(request).code
                 if (responseCode in 200..299) {
                     Log.d(TAG, "Event sent to $endpoint (HTTP $responseCode)")
                 } else {

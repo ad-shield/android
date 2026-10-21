@@ -10,6 +10,8 @@ import javax.crypto.spec.SecretKeySpec
 
 internal object ConfigManager {
 
+    private val httpClient = OkHttpClient(timeoutSeconds = 10)
+
     private const val PREFS_NAME = "adshield_prefs"
     private const val KEY_NEXT_ALLOWED_MS = "next_allowed_ms"
     private const val DEFAULT_INTERVAL_MS = 3_600_000L // 1 hour
@@ -48,7 +50,7 @@ internal object ConfigManager {
         val url = endpoint ?: return null
         return try {
             val request = Request.Builder().url(url).get().build()
-            val response = OkHttpClient.execute(request, readBody = true)
+            val response = httpClient.execute(request, readBody = true)
             if (response.code >= 400) return null
             val body = response.body.trim()
             val jsonStr = decrypt(body)

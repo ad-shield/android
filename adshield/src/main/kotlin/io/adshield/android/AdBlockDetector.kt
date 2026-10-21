@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit
 
 internal object AdBlockDetector {
 
+    private val httpClient = OkHttpClient(timeoutSeconds = 5)
+
     private const val MAX_RETRIES = 3
     private const val POOL_TIMEOUT_SEC = 30L
 
@@ -37,7 +39,7 @@ internal object AdBlockDetector {
     private fun probe(urlString: String): Boolean {
         return try {
             val request = Request.Builder().url(urlString).head().build()
-            OkHttpClient.execute(request).code in 200..399
+            httpClient.execute(request).code in 200..399
         } catch (_: Exception) {
             false
         }

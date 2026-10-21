@@ -5,6 +5,7 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.InetAddress
 import java.net.URL
+import java.net.SocketTimeoutException
 import java.net.URLConnection
 import java.net.URLStreamHandler
 import java.net.URLStreamHandlerFactory
@@ -175,7 +176,7 @@ class OkHttpClientTest {
         val target = server()
         repeat(22) { target.enqueue(MockResponse().setResponseCode(302).setHeader("Location", "/loop")) }
         try {
-            OkHttpClient.execute(Request.Builder().url(target.url("/loop")).head().build())
+            OkHttpClient(timeoutSeconds = 5).execute(Request.Builder().url(target.url("/loop")).head().build())
             fail("Expected redirect limit")
         } catch (expected: IOException) {
             assertEquals("Too many redirects", expected.message)
@@ -220,5 +221,35 @@ class OkHttpClientTest {
         val elapsed = (System.nanoTime() - started) / 1_000_000_000.0
         assertTrue("elapsed=$elapsed", elapsed < 2.0)
         assertEquals(1, target.requestCount)
+    }
+
+    @Test fun `clients with different timeout policies reuse the same connection pool`() {
+        val target = server()
+        target.enqueue(MockResponse().setBody("first"))
+        target.enqueue(MockResponse().setBody("second"))
+        val first = OkHttpClient(timeoutSeconds = 5)
+        val second = OkHttpClient(timeoutSeconds = 10)
+        assertEquals("first", first.execute(Request.Builder().url(target.url("/first")).build(), readBody = true).body)
+        assertEquals("second", second.execute(Request.Builder().url(target.url("/second")).build(), readBody = true).body)
+        val firstRequest = target.takeRequest(1, TimeUnit.SECONDS)!!
+        val secondRequest = target.takeRequest(1, TimeUnit.SECONDS)!!
+        assertEquals("/first", firstRequest.path); assertEquals(0, firstRequest.sequenceNumber)
+        assertEquals("/second", secondRequest.path); assertEquals(1, secondRequest.sequenceNumber)
+    }
+
+    @Test fun `GET uses caller timeout policy instead of an HTTP method default`() {
+        val target = server()
+        target.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
+        val client = OkHttpClient(timeoutSeconds = 1)
+        val started = System.nanoTime()
+        try {
+            client.execute(Request.Builder().url(target.url("/slow")).build(), readBody = true)
+            fail("Expected caller-configured read timeout")
+        } catch (_: SocketTimeoutException) {
+            val elapsed = (System.nanoTime() - started) / 1_000_000_000.0
+            assertTrue("elapsed=$elapsed", elapsed >= 0.75 && elapsed < 5.0)
+        }
+        assertEquals(1, target.requestCount)
+        assertEquals("GET", target.takeRequest(1, TimeUnit.SECONDS)!!.method)
     }
 }
