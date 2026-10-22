@@ -13,6 +13,7 @@ internal object EventLogger {
     private const val TAG = "AdShield"
     private const val TIMEOUT_MS = 10000
 
+    /** App version metadata supplies kv defaults; explicit caller values win without mutating kv. */
     fun log(
         context: Context,
         endpoints: List<String>,
@@ -30,7 +31,8 @@ internal object EventLogger {
         } catch (_: Exception) {
             "unknown"
         }
-        val json = buildPayload(deviceId, bundleId, osVersion, locale, results, sampleRatio, transmissionIntervalMs, sdkVersion, kv)
+        val reportKv = DeviceInfo.getAppVersionMetadata(context) + kv
+        val json = buildPayload(deviceId, bundleId, osVersion, locale, results, sampleRatio, transmissionIntervalMs, sdkVersion, reportKv)
 
         for (endpoint in endpoints) {
             var conn: HttpURLConnection? = null
