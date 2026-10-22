@@ -22,6 +22,28 @@ internal object DeviceInfo {
 
     fun getBundleId(context: Context): String = context.packageName
 
+    /**
+     * Host app metadata for report kv: app_version (versionName) and app_version_code (decimal).
+     * A missing or blank name is omitted; package lookup failure omits both values.
+     */
+    @Suppress("DEPRECATION")
+    fun getAppVersionMetadata(context: Context): Map<String, String> {
+        return try {
+            val info = context.packageManager.getPackageInfo(context.packageName, 0)
+            val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                info.longVersionCode
+            } else {
+                info.versionCode.toLong()
+            }
+            buildMap {
+                info.versionName?.takeIf { it.isNotBlank() }?.let { put("app_version", it) }
+                put("app_version_code", versionCode.toString())
+            }
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
     fun getOsVersion(): String = Build.VERSION.RELEASE
 
     fun getLocale(): String {
