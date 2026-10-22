@@ -7,6 +7,19 @@ object AdShield {
 
     private const val TAG = "AdShield"
 
+    /**
+     * Whether new [measure] calls can start detection. Defaults to true in each process.
+     * Disabling does not cancel measurements that have already started.
+     */
+    @JvmField
+    @Volatile
+    var enabled: Boolean = true
+
+    @JvmStatic
+    fun setEnabled(enabled: Boolean) {
+        this.enabled = enabled
+    }
+
     @JvmStatic
     @JvmOverloads
     fun configure(endpoint: String, kv: Map<String, String> = emptyMap()) {
@@ -15,6 +28,8 @@ object AdShield {
 
     @JvmStatic
     fun measure(context: Context) {
+        if (!enabled) return
+
         val appContext = context.applicationContext
 
         Thread {

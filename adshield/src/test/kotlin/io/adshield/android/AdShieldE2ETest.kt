@@ -26,6 +26,7 @@ class AdShieldE2ETest {
 
     @Before
     fun setUp() {
+        AdShield.enabled = true
         configServer = MockWebServer().also { it.start() }
         probeServer = MockWebServer().also { it.start() }
         reportServer = MockWebServer().also { it.start() }
@@ -44,6 +45,7 @@ class AdShieldE2ETest {
         reportServer.shutdown()
         ConfigManager.endpoint = null
         ConfigManager.kv = emptyMap()
+        AdShield.enabled = true
     }
 
     private fun encryptConfig(config: JSONObject): String {
@@ -76,6 +78,42 @@ class AdShieldE2ETest {
         config.put("reportEndpoints", JSONArray(endpoints))
 
         return encryptConfig(config)
+    }
+
+    @Test
+    fun `disabled measurements do no work and re-enabling restores detection`() {
+        configServer.enqueue(MockResponse().setBody(makeEncryptedConfig()))
+        probeServer.enqueue(MockResponse().setResponseCode(200))
+        reportServer.enqueue(MockResponse().setResponseCode(204))
+        val context = RuntimeEnvironment.getApplication()
+        val preferences = context.getSharedPreferences("adshield_prefs", Context.MODE_PRIVATE)
+
+        AdShield.enabled = false
+        AdShield.measure(context)
+        AdShield.setEnabled(false)
+        AdShield.measure(context)
+
+        assertNull(configServer.takeRequest(500, TimeUnit.MILLISECONDS))
+        assertEquals(0, probeServer.requestCount)
+        assertEquals(0, reportServer.requestCount)
+        assertTrue(preferences.all.isEmpty())
+
+        AdShield.setEnabled(true)
+        AdShield.measure(context)
+
+        assertEquals("GET", configServer.takeRequest(5, TimeUnit.SECONDS)?.method)
+        assertEquals("HEAD", probeServer.takeRequest(5, TimeUnit.SECONDS)?.method)
+        assertEquals("POST", reportServer.takeRequest(5, TimeUnit.SECONDS)?.method)
+
+        // Wait for the background measurement to finish scheduling before clearing test state.
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+        while (ConfigManager.isAllowed(context) && System.nanoTime() < deadline) {
+            Thread.sleep(10)
+        }
+        assertFalse(ConfigManager.isAllowed(context))
+        assertEquals(1, configServer.requestCount)
+        assertEquals(1, probeServer.requestCount)
+        assertEquals(1, reportServer.requestCount)
     }
 
     @Test
