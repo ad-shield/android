@@ -4,14 +4,15 @@ import android.content.Context
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
-import java.net.URL
+import okhttp3.MediaType
+import okhttp3.Request
+import okhttp3.RequestBody
 
 internal object EventLogger {
 
+    private val httpClient = OkHttpClient(timeoutSeconds = 10)
+
     private const val TAG = "AdShield"
-    private const val TIMEOUT_MS = 10000
 
     /** App version metadata supplies kv defaults; explicit caller values win without mutating kv. */
     fun log(
@@ -35,17 +36,10 @@ internal object EventLogger {
         val json = buildPayload(deviceId, bundleId, osVersion, locale, results, sampleRatio, transmissionIntervalMs, sdkVersion, reportKv)
 
         for (endpoint in endpoints) {
-            var conn: HttpURLConnection? = null
             try {
-                conn = URL(endpoint).openConnection() as HttpURLConnection
-                conn.requestMethod = "POST"
-                conn.setRequestProperty("Content-Type", "application/json")
-                conn.connectTimeout = TIMEOUT_MS
-                conn.readTimeout = TIMEOUT_MS
-                conn.doOutput = true
-
-                OutputStreamWriter(conn.outputStream).use { it.write(json) }
-                val responseCode = conn.responseCode
+                val body = RequestBody.create(MediaType.parse("application/json"), json.toByteArray(Charsets.UTF_8))
+                val request = Request.Builder().url(endpoint).post(body).build()
+                val responseCode = httpClient.execute(request).code
                 if (responseCode in 200..299) {
                     Log.d(TAG, "Event sent to $endpoint (HTTP $responseCode)")
                 } else {
@@ -53,8 +47,6 @@ internal object EventLogger {
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Event send to $endpoint failed: ${e.message}")
-            } finally {
-                conn?.disconnect()
             }
         }
     }

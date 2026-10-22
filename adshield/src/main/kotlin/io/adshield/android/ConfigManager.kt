@@ -3,19 +3,19 @@ package io.adshield.android
 import android.content.Context
 import android.util.Base64
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
+import okhttp3.Request
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 internal object ConfigManager {
 
+    private val httpClient = OkHttpClient(timeoutSeconds = 10)
+
     private const val PREFS_NAME = "adshield_prefs"
     private const val KEY_NEXT_ALLOWED_MS = "next_allowed_ms"
     private const val DEFAULT_INTERVAL_MS = 3_600_000L // 1 hour
     const val FAILURE_BACKOFF_MS = 86_400_000L // 24 hours
-    private const val TIMEOUT_MS = 10000
     private const val AES_KEY_HEX = "a6be11212141a6ba6cd7b9213fc4d84c98db63c2574824d452dcf56ee8cd6e42"
     private const val GCM_IV_LENGTH = 12
     private const val GCM_TAG_BITS = 128
@@ -48,14 +48,11 @@ internal object ConfigManager {
 
     fun fetchConfig(): Config? {
         val url = endpoint ?: return null
-        var conn: HttpURLConnection? = null
         return try {
-            conn = URL(url).openConnection() as HttpURLConnection
-            conn.requestMethod = "GET"
-            conn.connectTimeout = TIMEOUT_MS
-            conn.readTimeout = TIMEOUT_MS
-            val body = conn.inputStream.bufferedReader().use { it.readText().trim() }
-
+            val request = Request.Builder().url(url).get().build()
+            val response = httpClient.execute(request, readBody = true)
+            if (response.code >= 400) return null
+            val body = response.body.trim()
             val jsonStr = decrypt(body)
             val json = JSONObject(jsonStr)
 
@@ -77,8 +74,6 @@ internal object ConfigManager {
             Config(reportEndpoints, urls, intervalMs, sampleRatio)
         } catch (_: Exception) {
             null
-        } finally {
-            conn?.disconnect()
         }
     }
 

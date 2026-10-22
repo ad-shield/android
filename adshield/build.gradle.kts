@@ -31,9 +31,14 @@ android {
 }
 
 dependencies {
+    implementation("com.squareup.okhttp3:okhttp:3.12.13")
     testImplementation("junit:junit:4.13.2")
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:3.12.13")
     testImplementation("org.robolectric:robolectric:4.11.1")
+}
+
+tasks.withType<Test>().configureEach {
+    jvmArgs("--add-opens=java.base/java.net=ALL-UNNAMED")
 }
 
 mavenPublishing {
